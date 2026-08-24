@@ -22,9 +22,12 @@ OUTDIR="/home/alex/swiftedit-ltx-research/fe_out"; os.makedirs(OUTDIR, exist_ok=
 
 def main():
     torch.manual_seed(0); t0=time.time()
-    E=torch.load("/home/alex/swiftedit-ltx-research/p1_embeds.pt", map_location="cpu")
-    src=E["src"].to(DEV,DT); edit=E["edit"].to(DEV,DT)
-    smsk=E["src_mask"].to(DEV); emsk=E["edit_mask"].to(DEV); zero=torch.zeros_like(src)
+    EMB=os.environ.get("FE_EMBEDS","/home/alex/swiftedit-ltx-research/p1_embeds.pt")
+    KEY=os.environ.get("FE_EDIT_KEY","edit")           # multi file: blue|sunset|truck|snow
+    E=torch.load(EMB, map_location="cpu")
+    src=E["src"].to(DEV,DT); edit=E[KEY].to(DEV,DT)
+    smsk=E["src_mask"].to(DEV); emsk=E[KEY+"_mask"].to(DEV); zero=torch.zeros_like(src)
+    print(f"edit '{KEY}': {E.get(KEY+'_prompt','(from '+os.path.basename(EMB)+')')}",flush=True)
     vae=AutoencoderKLLTXVideo.from_pretrained(REPO,subfolder="vae",torch_dtype=DT).to(DEV).eval()
     tr =LTXVideoTransformer3DModel.from_pretrained(REPO,subfolder="transformer",torch_dtype=DT).to(DEV).eval()
     sch=FlowMatchEulerDiscreteScheduler.from_pretrained(REPO,subfolder="scheduler")
@@ -106,7 +109,7 @@ def main():
         s=(srcvid[0,idx].clamp(0,1).permute(1,2,0).cpu().float().numpy()*255).astype(np.uint8)
         e=(editvid[0,idx].clamp(0,1).permute(1,2,0).cpu().float().numpy()*255).astype(np.uint8)
         canvas.paste(Image.fromarray(s),(k*W,0)); canvas.paste(Image.fromarray(e),(k*W,H))
-    out=os.path.join(OUTDIR,"flowedit_montage.png"); canvas.save(out)
+    out=os.path.join(OUTDIR,f"flowedit_{KEY}_montage.png"); canvas.save(out)
     print(f"  saved {out}",flush=True)
     print(f"  done in {time.time()-t0:.0f}s  GPU peak {torch.cuda.max_memory_allocated()/1e9:.2f}GB",flush=True)
 

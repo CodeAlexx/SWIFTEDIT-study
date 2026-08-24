@@ -52,6 +52,28 @@ edit accumulates. No inversion to noise, so the P0b inversion ceiling never appl
 Knobs (`FE_*` env vars): `FE_TGT_GS` is edit strength (**4–5 = clean recolor, 5.5+ morphs the car**),
 `FE_SRC_GS ≈ 1.5`, `FE_NAVG` (variance reduction), `FE_NMIN/NMAX` (edit band), `FE_H/W/N`.
 
+### Generality — it's not just a recolor
+
+Same source clip, four fundamentally different edit types (one T5 encode of all prompts via
+`scripts/p1_encode_multi.py`, then `FE_EDIT_KEY=<type>`), each ~45 s / 6.6 GB:
+
+| edit | category | outcome |
+|---|---|---|
+| `blue` | color | car red → blue, scene kept |
+| `sunset` | scene / lighting | whole frame → dramatic orange sunset, car & road kept |
+| `truck` | **object swap** | sports car → yellow pickup truck, position/motion kept |
+| `snow` | weather | coastal road → snow-covered, car kept |
+
+![object swap](gallery/edit_truck_object.png)
+*Object swap: red sports car → yellow pickup truck.*
+
+![scene edit](gallery/edit_sunset_scene.png)
+*Scene / lighting: daytime coast → orange sunset.*
+
+All four in `gallery/`. FlowEdit localizes by prompt *difference*, so a car-only prompt change edits
+the car (recolor / object) while a scene prompt change edits the environment (sunset / snow) — no
+mask, no per-edit tuning beyond guidance strength.
+
 ---
 
 ## The trail that led there
